@@ -9,6 +9,19 @@ import torch
 from mace.tools import TensorDict
 from mace.tools.torch_geometric import Batch
 
+def exponential_eerror(ref: Batch, pred: TensorDict, sigma=30) -> torch.Tensor:
+    werror = torch.exp(torch.square(pred["energy"] - pred["energy"].min())/sigma)
+    return(torch.mean((ref["energy"] - pred["energy"]) / werror))
+
+def exponential_ferror(ref: Batch, pred: TensorDict, sigma=30) -> torch.Tensor:
+    werror = torch.exp(torch.square(pred["energy"] - pred["energy"].min())/sigma)
+    return(torch.mean(torch.mean(torch.reshape(torch.mean(torch.square((ref["forces"] - pred["forces"])), dim=(1)), [int(werror.shape[0]), int(ref["forces"].shape[0]/werror.shape[0])]), dim=(1)) / werror))
+
+
+def exponential_serror(ref: Batch, pred: TensorDict, sigma=30) -> torch.Tensor:
+    werror = torch.exp(torch.square(pred["energy"] - pred["energy"].min())/sigma)
+    breakpoint()
+    return(torch.mean(torch.mean(torch.reshape(torch.mean(torch.square((ref["stress"] - pred["stress"])), dim=(1)), [int(werror.shape[0]), int(ref["stress"].shape[0]/werror.shape[0])]), dim=(1)) / werror))
 
 def mean_squared_error_energy(ref: Batch, pred: TensorDict) -> torch.Tensor:
     # energy: [n_graphs, ]
@@ -146,6 +159,27 @@ def conditional_huber_forces(
 
     return torch.mean(se)
 
+class ExponentialLoss(torch.nn.Module):
+    def __init__(self, energy_weight=1.0, forces_weight=1.0, stress_weight=1.0, sigma=30) -> None:
+        super().__init__()
+        self.register_buffer(
+            "energy_weight",
+            torch.tensor(energy_weight, dtype=torch.get_default_dtype()),
+        )
+        self.register_buffer(
+            "forces_weight",
+            torch.tensor(forces_weight, dtype=torch.get_default_dtype()),
+        )
+        self.register_buffer(
+            "stress_weight",
+            torch.tensor(stress_weight, dtype=torch.get_default_dtype()),
+        )
+        self.register_buffer(
+            "sigma",
+            torch.tensor(sigma, dtype=torch.get_default_dtype()),
+        )
+    def forward(self, ref: Batch, pred: TensorDict) -> torch.Tensor:
+        return self.energy_weight * exponential_eerror(ref, pred, self.sigma) + self.forces_weight * exponential_ferror(ref, pred, self.sigma)# + self.stress_weight * exponential_serror(ref, pred, self.sigma)
 
 class WeightedEnergyForcesLoss(torch.nn.Module):
     def __init__(self, energy_weight=1.0, forces_weight=1.0) -> None:

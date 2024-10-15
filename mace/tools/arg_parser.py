@@ -443,6 +443,7 @@ def build_default_arg_parser() -> argparse.ArgumentParser:
             "huber",
             "universal",
             "energy_forces_dipole",
+            "sscha",
         ],
     )
     parser.add_argument(
