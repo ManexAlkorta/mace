@@ -11,16 +11,17 @@ from mace.tools.torch_geometric import Batch
 
 def exponential_eerror(ref: Batch, pred: TensorDict, sigma=30) -> torch.Tensor:
     werror = torch.exp(torch.square(pred["energy"] - pred["energy"].min())/sigma)
-    return(torch.mean(torch.absolute((ref["energy"] - pred["energy"])) / werror))
+    print(torch.mean(torch.abs((ref["energy"] - pred["energy"])) / werror))
+    return(torch.mean(torch.abs((ref["energy"] - pred["energy"])) / werror))
 
 def exponential_ferror(ref: Batch, pred: TensorDict, sigma=30) -> torch.Tensor:
     werror = torch.exp(torch.square(pred["energy"] - pred["energy"].min())/sigma)
-    return(torch.mean(torch.absolute(torch.mean(torch.reshape(torch.mean(torch.square((ref["forces"] - pred["forces"])), dim=(1)), [int(werror.shape[0]), int(ref["forces"].shape[0]/werror.shape[0])]), dim=(1)) / werror)))
+    print(torch.mean(torch.abs(torch.mean(torch.reshape(torch.mean(torch.square((ref["forces"] - pred["forces"])), dim=(1)), [int(werror.shape[0]), int(ref["forces"].shape[0]/werror.shape[0])]), dim=(1)) / werror)))
+    return(torch.mean(torch.abs(torch.mean(torch.reshape(torch.mean(torch.square((ref["forces"] - pred["forces"])), dim=(1)), [int(werror.shape[0]), int(ref["forces"].shape[0]/werror.shape[0])]), dim=(1)) / werror)))
 
 
 def exponential_serror(ref: Batch, pred: TensorDict, sigma=30) -> torch.Tensor:
     werror = torch.exp(torch.square(pred["energy"] - pred["energy"].min())/sigma)
-    breakpoint()
     return(torch.mean(torch.mean(torch.reshape(torch.mean(torch.square((ref["stress"] - pred["stress"])), dim=(1)), [int(werror.shape[0]), int(ref["stress"].shape[0]/werror.shape[0])]), dim=(1)) / werror))
 
 def mean_squared_error_energy(ref: Batch, pred: TensorDict) -> torch.Tensor:
